@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as path;
 
 class DatabaseHelper {
-  static const _databaseName = 'contactData.db';
+  static const _databaseName = 'ContactData.db';
   static const _databaseVersion = 1;
 
   DatabaseHelper._();
@@ -13,7 +13,7 @@ class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._();
 
   Database? _database;
-  Future<Database> get database async{
+  Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDatabase();
     return _database!;
@@ -22,17 +22,36 @@ class DatabaseHelper {
   _initDatabase() async {
     Directory dataDirectory = await getApplicationDocumentsDirectory();
     String dbPath = path.join(dataDirectory.path, _databaseName);
+    // String p = await getDatabasesPath();
+    // String dbPath = path.join(p, _databaseName);
     return await openDatabase(dbPath,
         version: _databaseVersion, onCreate: _onCreateDB);
   }
 
+  // Create Table
   _onCreateDB(Database db, int version) async {
-    db.execute('''
-    CREATE TABLE ${ContactModel.tableName}(
+    await db.execute('''
+    CREATE TABLE IF NOT EXISTS ${ContactModel.tableName}(
       ${ContactModel.colId} INTEGER PRIMARY KEY AUTOINCREMENT,
       ${ContactModel.colName} TEXT NOT NULL,
-      ${ContactModel.colMobile} TEXT NOT NULL,
-    )
+      ${ContactModel.colMobile} TEXT NOT NULL 
+      )
     ''');
+  }
+
+  // insert data to the Table
+  Future<int> insertContact(ContactModel contactModel) async {
+    Database db = await database;
+    return await db.insert(ContactModel.tableName, contactModel.toMap());
+  }
+
+  // fetch data from database
+  Future<List<ContactModel>> fetchContacts() async {
+    Database db = await database;
+    List<Map<String, dynamic>> contacts =
+        await db.query(ContactModel.tableName);
+    return contacts.isEmpty
+        ? []
+        : contacts.map((e) => ContactModel.fromMap(e)).toList();
   }
 }

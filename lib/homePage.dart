@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sqlite_crud/models/contact_model.dart';
+import 'package:flutter_sqlite_crud/models/database/database_helper.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -12,6 +13,22 @@ class _HomePageState extends State<HomePage> {
   final _formKey = GlobalKey<FormState>();
   final ContactModel _contactModel = ContactModel();
   List<ContactModel> _contactList = [];
+  late final DatabaseHelper _dbHelper;
+
+  @override
+  void initState() {
+    super.initState();
+    _dbHelper = DatabaseHelper.instance;
+    _refreshContactList();
+  }
+
+  _refreshContactList() async {
+    List<ContactModel> x = await _dbHelper.fetchContacts();
+    setState(() {
+      _contactList = x;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -85,10 +102,14 @@ class _HomePageState extends State<HomePage> {
       // _contactList.add(_contactModel);
 
       // To avoid duplicate value. Create new instance of this model
-      _contactList.add(ContactModel(
-          id: null, name: _contactModel.name, mobile: _contactModel.mobile));
+      // _contactList.add(ContactModel(
+      //     id: null, name: _contactModel.name, mobile: _contactModel.mobile));
+
+      // insert date direct to database
+      _dbHelper.insertContact(_contactModel);
+      _refreshContactList();
     });
-    print(_contactModel.name); 
+    print(_contactModel.name);
     form.reset();
   }
 
@@ -121,7 +142,6 @@ class _HomePageState extends State<HomePage> {
                     const Divider(
                       height: 2.0,
                     ),
-                    
                   ],
                 );
               })),
