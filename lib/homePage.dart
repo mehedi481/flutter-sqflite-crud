@@ -11,9 +11,12 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final _formKey = GlobalKey<FormState>();
-  final ContactModel _contactModel = ContactModel();
+  ContactModel _contactModel = ContactModel();
   List<ContactModel> _contactList = [];
   late final DatabaseHelper _dbHelper;
+
+  TextEditingController nameController = TextEditingController();
+  TextEditingController mobileController = TextEditingController();
 
   @override
   void initState() {
@@ -64,6 +67,7 @@ class _HomePageState extends State<HomePage> {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               TextFormField(
+                controller: nameController,
                 decoration: const InputDecoration(labelText: 'Full Name'),
                 onSaved: (value) {
                   setState(() {
@@ -75,6 +79,7 @@ class _HomePageState extends State<HomePage> {
                 },
               ),
               TextFormField(
+                controller: mobileController,
                 decoration: const InputDecoration(labelText: 'Mobile'),
                 onSaved: (value) {
                   setState(() {
@@ -92,25 +97,36 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  _onSubmit() {
+  _onSubmit() async {
     var form = _formKey.currentState;
     if (form!.validate()) {
       form.save();
     }
-    setState(() {
-      // This will generate same value of contact list
-      // _contactList.add(_contactModel);
+    // This will generate same value of contact list
+    // _contactList.add(_contactModel);
 
-      // To avoid duplicate value. Create new instance of this model
-      // _contactList.add(ContactModel(
-      //     id: null, name: _contactModel.name, mobile: _contactModel.mobile));
+    // To avoid duplicate value. Create new instance of this model
+    // _contactList.add(ContactModel(
+    //     id: null, name: _contactModel.name, mobile: _contactModel.mobile));
 
+    if (_contactModel.id == null) {
       // insert date direct to database
-      _dbHelper.insertContact(_contactModel);
-      _refreshContactList();
-    });
+      await _dbHelper.insertContact(_contactModel);
+    } else {
+      await _dbHelper.updateContact(_contactModel);
+    }
+    _refreshContactList();
+    resetForm();
     print(_contactModel.name);
-    form.reset();
+  }
+
+  resetForm() {
+    setState(() {
+      _formKey.currentState!.reset();
+      nameController.clear();
+      mobileController.clear();
+      _contactModel.id = null;
+    });
   }
 
   _list() => Expanded(
@@ -138,6 +154,23 @@ class _HomePageState extends State<HomePage> {
                           fontWeight: FontWeight.normal,
                         ),
                       ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete_sweep),
+                        color: Colors.black,
+                        onPressed: () async {
+                          await _dbHelper
+                              .deleteContact(_contactList[index].id!);
+                          resetForm();
+                          _refreshContactList();
+                        },
+                      ),
+                      onTap: () {
+                        setState(() {
+                          _contactModel = _contactList[index];
+                          nameController.text = _contactList[index].name!;
+                          mobileController.text = _contactList[index].mobile!;
+                        });
+                      },
                     ),
                     const Divider(
                       height: 2.0,

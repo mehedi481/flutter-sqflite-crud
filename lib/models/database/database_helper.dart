@@ -54,4 +54,18 @@ class DatabaseHelper {
         ? []
         : contacts.map((e) => ContactModel.fromMap(e)).toList();
   }
+
+  // update data
+  Future<int> updateContact(ContactModel contactModel) async {
+    Database db = await database;
+    return await db.update(ContactModel.tableName, contactModel.toMap(),
+        where: '${ContactModel.colId}=?', whereArgs: [contactModel.id]);
+  }
+
+  // delete data
+  Future<int> deleteContact(int id) async {
+    Database db = await database;
+    return await db.delete(ContactModel.tableName,
+        where: '${ContactModel.colId}=?', whereArgs: [id]);
+  }
 }
